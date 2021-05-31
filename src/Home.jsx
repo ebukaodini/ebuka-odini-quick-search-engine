@@ -5,7 +5,10 @@ import './App.css';
 class Home extends Component {
   state = {
     hasError: false,
-    errMsg: ""
+    errMsg: "",
+    path: "",
+    query: "",
+    pathFound: false
   }
 
   a = {
@@ -19,15 +22,15 @@ class Home extends Component {
         city: "Ikoyi",
         state: "Lagos",
         address: "One expensive house like that"
-      }
+      },
     }
   }
 
   handleSubmit = () => {
     try {
-      this.setState({ hasError: false });
-      let path = this.pathGet(this.a, document.getElementById('query').value);
-      document.getElementById('path').innerText = path;
+      let query = document.getElementById('query').value;
+      let path = this.pathGet(this.a, query);
+      this.setState({ hasError: false, query: query, pathFound: true, path: path });
     } catch (error) {
       this.setState({ hasError: true, errMsg: error });
     }
@@ -36,22 +39,38 @@ class Home extends Component {
   pathGet = (a, query) => {
     try {
       if (query.length === 0) {
-        throw new Error('Please enter query')
+        throw new Error('Please enter search query')
       }
-      for (var prop in a) {
-        let value = a.prop;
-        if (typeof value === 'object') {
-          this.pathGet(value, query);
-        } else if (typeof value === 'string'){
-          if (value === query) {
-            return prop;
-          }
-        }
+      let path = this.traversePath(a, query, ['a']);
+      if (path === undefined) {
+        throw new Error('Path not found')
+      } else {
+        return path;
       }
     } catch (error) {
       throw error;
     }
+  }
 
+  traversePath = (object, query, path) => {
+    for (var prop in object) {
+      if (!object.hasOwnProperty(prop)) continue;
+      let value = object[prop];
+
+      if (typeof value === 'object') {
+        path.push(prop);
+        let traverse = this.traversePath(value, query, path);
+        if (traverse === undefined) continue; else {
+          return traverse;
+        };
+      } else {
+        // eslint-disable-next-line eqeqeq
+        if (value == query) { // eqeqeq was disabled to allow numbers and strings to pass
+          path.push(prop);
+          return path.join(".");
+        }
+      }
+    }
   }
 
   render() {
@@ -66,19 +85,30 @@ class Home extends Component {
         <p>Run a Quick Search</p>
 
         <form onSubmit={(e) => { e.preventDefault(); this.handleSubmit() }}>
-          <input type='search' id='query' />
-          <input type='submit' value='Search' />
+          <input type='search' id='query' style={{ padding: '5px' }} />
+          <input type='submit' value='Search' style={{ padding: '5px', }} />
         </form>
 
         <div>
           <br />
           {
-            this.state.hasError &&
-            <span style={{ color: 'red' }}>
-              {this.state.errMsg.toString()}
-            </span>
+            this.state.hasError === true ?
+              <>
+                <span style={{ color: 'red' }}>
+                  {this.state.errMsg.toString()}
+                </span>
+                <br />
+              </>
+              :
+              this.state.pathFound &&
+              <>
+                <span>
+                  Path for <i>{this.state.query.toString()}</i> :
+                </span>
+                <br />
+                <span style={{ color: 'lightgreen', }}>{this.state.path}</span>
+              </>
           }
-          <span id='path' style={{ color: 'green' }}></span>
         </div>
       </div>
     );
