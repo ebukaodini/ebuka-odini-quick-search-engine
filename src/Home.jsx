@@ -38,8 +38,16 @@ class Home extends Component {
       if (query.length === 0) {
         throw new Error('Please enter query')
       }
-      let path = "Hi path";
-      return path;
+      for (var prop in a) {
+        let value = a.prop;
+        if (typeof value === 'object') {
+          this.pathGet(value, query);
+        } else if (typeof value === 'string'){
+          if (value === query) {
+            return prop;
+          }
+        }
+      }
     } catch (error) {
       throw error;
     }
